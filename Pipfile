@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 ray = "*"
+sklearn = "*"
 
 [dev-packages]
 
