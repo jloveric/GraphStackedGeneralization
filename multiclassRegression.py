@@ -6,15 +6,51 @@ from sklearn.linear_model import Ridge
 from joblib import dump, load
 import pickle
 from sklearn import preprocessing
+from sklearn.metrics import accuracy_score
 
-def multiClassRegression(images, labelSets, filename=None) :
+# I want on model per class, one against all.  You can think of this
+# as having on neuron compute the probability for a single class
+# which I think is what I want - instead of one computing for every class.
+class MultiClassRegression :
+    def __init__(self, nLabels) :
+        #Do something here
+        self.models = None
+        self.correct = None
+        self.score = None
+        self.nLabels = nLabels
+
+    def fit(self, X, y) :
+        self.models = curveFit(X, y, self.nLabels)
+        return self
+
+    def predict(self, X) :
+        return classify(self.models, X)
+
+    def score(self, X, y) :
+        correct, score = scoreSet(self.models, X, y)
+        self.correct = correct
+        self.score = score
+        return self.score
+
+    def computeScore(self, predicted, actual) :
+        return computeScore(predicted, actual)
+
+    def set_params(self) :
+        #something
+        return
+
+    def getIncorrect(self,predicted, actual):
+        #something
+        return returnFailed(predicted, actual)
+
+
+def multiClassRegression(data, labelSets, filename=None) :
 
     regSet = []
+    
     for i in range(0,len(labelSets)) :
-        #print('npImages.shape',images.shape)
-        #print('labelsSets[i].shape',labelSets[i].shape)
-        #reg = LinearRegression().fit(images, labelSets[i])
-        reg = Ridge(alpha=0.5, tol=0.001).fit(images, labelSets[i])
+        #reg = LinearRegression().fit(data, labelSets[i])
+        reg = Ridge(alpha=0.5, tol=0.001).fit(data, labelSets[i])
         regSet.append(reg)
 
     if filename!=None :
@@ -84,8 +120,7 @@ def computeScore(final, labels, dumpError=False) :
         else :
             if dumpError :
                 print(i,pair[i][0],pair[i][1],final[i])
-            
-
+    
     return [correct, correct/pair.shape[0]]
 
 def returnFailed(final, labels) :
@@ -94,16 +129,14 @@ def returnFailed(final, labels) :
     condition = (pair[:,0] != pair[:,1])
     return condition #np.extract(condition, np.range())
 
-
 def curveFit(data, labels, nLabels, filename=None):
     labelSets = booleanSingleClassLabel(labels,nLabels)
     regTrain = multiClassRegression(data, labelSets, filename)
     return regTrain
 
-def finalAndScore(regression, data, labels ):
+def finalAndScore(regression, data, labels):
     final = classify(regression,data)
     [correct, score] = computeScore(final, labels)
-    #print('correct',correct,score)
     return score, final
 
 def scoreSet(regression,data, label) :

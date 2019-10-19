@@ -15,7 +15,7 @@ def classify(model, data) :
     return mr.classify(model,data) 
 
 @ray.remote(num_return_vals=3)
-def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False) :
+def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metric=None) :
     totalSize = nextData.shape[0]
     numFailed = totalSize
     totalFailures = 0
@@ -31,15 +31,17 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
 
     modelSet = []
     while numFailed!=0 :
-        #print('images.shape',nImages.shape)
         
-        model = mr.curveFit(thisData, thisLabels, 10)
+        metric.fit(thisData, thisLabels)
+        model = metric.models
+
         modelSet.append(model)
 
-        score, final = mr.finalAndScore(model, thisData, thisLabels)
-
-        failed = mr.returnFailed(final, thisLabels)
+        final = metric.predict(thisData)
+        correct, score = metric.computeScore(thisData, thisLabels)
+        failed = metric.getIncorrect(final, thisLabels)
         numFailed = np.sum(failed)
+
         print('score', score, 'failed', numFailed, 'number', len(modelSet), 'id', index)
         
         #In the last layer we don't care bout computing the error models
@@ -54,7 +56,7 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
     return modelSet, totalFailures, index
 
 def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis) :
-    
+
     numLayers = len(modelsInLayer)
 
     totalSize = nextData.shape[0]
@@ -76,7 +78,7 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis) :
         oldData = np.copy(nextData)
         print("Constructing layer ------------------------------", len(allModelSets))
         for i in range(0,modelsInLayer[layer]) :
-            thisModelSet, totalFailures, index = computeModelSet.remote(nextDataId, nextLabelsId, modelsInLayer[layer], p, i, lastLayer = (numLayers==1))
+            thisModelSet, totalFailures, index = computeModelSet.remote(nextDataId, nextLabelsId, modelsInLayer[layer], p, i, lastLayer = (numLayers==1), metric=mr.MultiClassRegression(nLabels=10))
             modelSet.append(thisModelSet)
             failures.append(totalFailures)
 
