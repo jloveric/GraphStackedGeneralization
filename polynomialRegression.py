@@ -12,10 +12,10 @@ def expand(data, a) :
 
 @ray.remote(num_return_vals=1)
 def classify(model, data) :
-    return mr.classify(model,data) 
+    return model.predict(data) 
 
 @ray.remote(num_return_vals=3)
-def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metric=None) :
+def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metricPrototype=None) :
     totalSize = nextData.shape[0]
     numFailed = totalSize
     totalFailures = 0
@@ -27,22 +27,23 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
     else :
         thisData = nextData
         thisLabels = nextLabels
-        print('shapes', thisData.shape, thisLabels.shape)
 
     modelSet = []
     while numFailed!=0 :
         
-        metric.fit(thisData, thisLabels)
-        model = metric.models
+        metric = metricPrototype.clone()
 
-        modelSet.append(model)
+        metric.fit(thisData, thisLabels)
+        #model = metric.models
+
+        modelSet.append(metric)
 
         final = metric.predict(thisData)
-        correct, score = metric.computeScore(thisData, thisLabels)
+        correct, score = metric.computeScore(final, thisLabels)
         failed = metric.getIncorrect(final, thisLabels)
         numFailed = np.sum(failed)
 
-        print('score', score, 'failed', numFailed, 'number', len(modelSet), 'id', index)
+        print('score', score, 'failed', numFailed, 'number', len(modelSet), 'id', index, flush=True)
         
         #In the last layer we don't care bout computing the error models
         if lastLayer == True :
@@ -55,7 +56,7 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
         
     return modelSet, totalFailures, index
 
-def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis) :
+def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis, metricPrototype) :
 
     numLayers = len(modelsInLayer)
 
@@ -67,6 +68,7 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis) :
     layer = 0
 
     nextLabelsId = ray.put(nextLabels)
+    metricPrototypeId = ray.put(metricPrototype)
 
     while numLayers > 0 :
         atLeastOneFailed = False
@@ -76,9 +78,13 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis) :
         nextDataId = ray.put(nextData, weakref=True)
 
         oldData = np.copy(nextData)
-        print("Constructing layer ------------------------------", len(allModelSets))
+        print("Constructing layer ------------------------------", len(allModelSets),flush=True)
         for i in range(0,modelsInLayer[layer]) :
-            thisModelSet, totalFailures, index = computeModelSet.remote(nextDataId, nextLabelsId, modelsInLayer[layer], p, i, lastLayer = (numLayers==1), metric=mr.MultiClassRegression(nLabels=10))
+            
+            thisModelSet, totalFailures, index = computeModelSet.remote(nextDataId, nextLabelsId, 
+                                                            modelsInLayer[layer], p, i, 
+                                                            lastLayer = (numLayers==1), 
+                                                            metricPrototype=metricPrototypeId)
             modelSet.append(thisModelSet)
             failures.append(totalFailures)
 
@@ -103,7 +109,7 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis) :
             modelSetIds.append(ray.put(i))
 
         print('creating new classification estimates')
-        inputSet = mr.classify(modelSet[0],oldData)
+        inputSet = modelSet[0].predict(oldData)
         results = []
         for i in range(1,len(modelSet)) :
             #print('i', i)
@@ -143,22 +149,22 @@ def evaluateModel(nextData, labels, allModelSets, transformSet, basis) :
 
     numLevels = len(allModelSets)
     for level in range(0, numLevels) :
-        print("Computing output for layer",level+1)
+        print("-------------------Computing output for layer------------------",level+1)
         theseModels = allModelSets[level]
         numModels = len(theseModels)
         
-        inputSet = mr.classify(theseModels[0],nextData)
+        inputSet = theseModels[0].predict(nextData)
         correct, percent = mr.computeScore(inputSet, labels)
         print('correct', correct, 'fraction correct', percent)
         
         for model in range(1, numModels) :
-            res = mr.classify(theseModels[model],nextData)
+            res = theseModels[model].predict(nextData)
             inputSet = np.dstack((inputSet, res))
-            correct, percent = mr.computeScore(res, labels)
+            correct, percent = theseModels[model].computeScore(res, labels)
             print('correct', correct, 'fraction correct', percent)
 
         ts = inputSet.shape
-        print('ts', ts)
+        
         if len(ts) > 2 :
             inputSet = inputSet.reshape((ts[0],ts[1]*ts[2]))
         inputSet = transformSet[level].transform(inputSet)

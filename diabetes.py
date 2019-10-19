@@ -40,7 +40,7 @@ modelsInLayer = [width]*numLayers
 modelsInLayer[-1] = 1
 
 ## Build the stacked model - each model is built on a random subset of 95% of the training data
-allModelSets, transformSet, basis = buildParallel(data, y_train, modelsInLayer, int(0.95*useTraining), polynomial.basis5)
+allModelSets, transformSet, basis = buildParallel(data, y_train, modelsInLayer, int(0.95*useTraining), polynomial.basis5, mr.MultiClassRegression(nLabels=2))
 
 ## Now run through the test data
 print('testing ---------------------------------------------')

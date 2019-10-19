@@ -1,3 +1,4 @@
+from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
 import math as math
@@ -7,10 +8,12 @@ from joblib import dump, load
 import pickle
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
+import ray
 
 # I want on model per class, one against all.  You can think of this
 # as having on neuron compute the probability for a single class
 # which I think is what I want - instead of one computing for every class.
+#@ray.remote
 class MultiClassRegression :
     def __init__(self, nLabels) :
         #Do something here
@@ -23,6 +26,7 @@ class MultiClassRegression :
         self.models = curveFit(X, y, self.nLabels)
         return self
 
+    #@ray.method(num_return_vals=1)
     def predict(self, X) :
         return classify(self.models, X)
 
@@ -43,6 +47,9 @@ class MultiClassRegression :
         #something
         return returnFailed(predicted, actual)
 
+    def clone(self) :
+        #I don't actually want to clone the models - this is just to get the same initial conditions
+        return deepcopy(self)
 
 def multiClassRegression(data, labelSets, filename=None) :
 
