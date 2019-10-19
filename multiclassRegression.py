@@ -10,11 +10,58 @@ from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
 import ray
 
+#@ray.remote
+class MultiOutputRegression :
+    def __init__(self, nOutputs, tolerance=1.0e-3) :
+        self.models = None
+        self.correct = None
+        self.score = None
+        self.nOutputs = nOutputs
+        self.tolerance = tolerance
+
+    #Good
+    def fit(self, X, y) :
+        self.models = multiClassRegression(X, y.transpose())
+        return self
+
+    #Good
+    def predict(self, X) :
+        return classify(self.models, X)
+
+    def score(self, X, y) :
+        #Now do a metric distance, the smaller the better?
+        out = self.predict(X)
+        self.score = self.computeScore(out, y)
+        return self.score
+
+    #Good
+    def computeScore(self, predicted, actual) :
+
+        correct = np.where(np.abs(predicted-actual)<=self.tolerance, True, False)
+
+        diff = np.linalg.norm(predicted-actual)
+        diff = diff/diff.size
+
+        return np.sum(correct), diff
+
+    def set_params(self) :
+        #something
+        return
+
+    def getIncorrect(self,predicted, actual):
+        #something
+        incorrect = np.where(np.abs(predicted-actual)>self.tolerance, True, False)
+        return incorrect.flatten()
+
+    def clone(self) :
+        #I don't actually want to clone the models - this is just to get the same initial conditions
+        return deepcopy(self)
+
 # I want on model per class, one against all.  You can think of this
 # as having on neuron compute the probability for a single class
 # which I think is what I want - instead of one computing for every class.
 #@ray.remote
-class MultiClassRegression :
+class MultiClassClassification :
     def __init__(self, nLabels) :
         #Do something here
         self.models = None
@@ -55,14 +102,23 @@ def multiClassRegression(data, labelSets, filename=None) :
 
     regSet = []
     
+    print('data.shape',data.shape,'labelSets.shape',labelSets.shape)
+
+    
+    if labelSets.shape[0]==1 or len(data.shape)==1 :
+        regSet.append(Ridge(alpha=0.5, tol=0.001).fit(data, labelSets.flatten()))
+    else :
+        for i in range(0,labelSets.shape[0]) :
+            #reg = LinearRegression().fit(data, labelSets[i])
+            reg = Ridge(alpha=0.5, tol=0.001).fit(data, labelSets[i])
+            regSet.append(reg)
+    
+    '''
     for i in range(0,len(labelSets)) :
         #reg = LinearRegression().fit(data, labelSets[i])
         reg = Ridge(alpha=0.5, tol=0.001).fit(data, labelSets[i])
         regSet.append(reg)
-
-    if filename!=None :
-        dump(regSet,filename)
-
+    '''
     return regSet
 
 #This assumes your labels are 0...n-1
@@ -76,7 +132,7 @@ def booleanSingleClassLabel(labels,n) :
         b = np.where(arr!=i,0,1)
         
         labelSets.append(b)
-    return labelSets
+    return np.array(labelSets)
 
 def classify(regSets, images) :
 

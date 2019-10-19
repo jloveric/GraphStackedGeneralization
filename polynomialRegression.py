@@ -15,7 +15,7 @@ def classify(model, data) :
     return model.predict(data) 
 
 @ray.remote(num_return_vals=3)
-def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metricPrototype=None) :
+def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metricPrototype=None,maxFailures=10) :
     totalSize = nextData.shape[0]
     numFailed = totalSize
     totalFailures = 0
@@ -47,6 +47,9 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
         
         #In the last layer we don't care bout computing the error models
         if lastLayer == True :
+            break
+        
+        if totalFailures > maxFailures :
             break
 
         if numFailed > 0 :

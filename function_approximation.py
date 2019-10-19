@@ -14,9 +14,8 @@ ray.init(num_cpus=1)
 numVals = 1000
 x = np.arange(numVals)/(numVals-1)-0.5
 x= x.reshape((x.shape[0],1))
-y = np.sin(1.0/x)
-
-print('x',x)
+print('x.shape', x.shape)
+y = 0.5*np.sin(2.0*x)
 
 #Use 90% for training and 10% for test
 useTraining = int(0.9*numVals)
@@ -25,7 +24,7 @@ X_train, X_test, y_train, y_test = train_test_split(x, y, train_size=useTraining
 
 ## The first layer is expanded differently than the internal
 ## layers since the user may know something about the input data
-firstExpansion = polynomial.basis0
+firstExpansion = polynomial.basis5DG
 data = expand(X_train, firstExpansion)
 dataTest = expand(X_test, firstExpansion)
 
@@ -36,7 +35,7 @@ modelsInLayer = [width]*numLayers
 modelsInLayer[-1] = 1
 
 ## Build the stacked model - each model is built on a random subset of 95% of the training data
-allModelSets, transformSet, basis = buildParallel(data, y_train, modelsInLayer, int(0.95*useTraining), polynomial.basis5)
+allModelSets, transformSet, basis = buildParallel(data, y_train, modelsInLayer, int(0.95*useTraining), polynomial.basis5DG, mr.MultiOutputRegression(nOutputs=1, tolerance=0.01))
 
 ## Now run through the test data
 print('testing ---------------------------------------------')
