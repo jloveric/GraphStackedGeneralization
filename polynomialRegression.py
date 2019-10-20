@@ -5,6 +5,7 @@ import polynomial
 import ray
 from iteration_utilities import deepflatten
 
+
 def expand(data, a) :
     nImages = a(data)
     nImages = nImages.reshape(nImages.shape[0],nImages.shape[1]*nImages.shape[2])
@@ -41,7 +42,12 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
         final = metric.predict(thisData)
         correct, score = metric.computeScore(final, thisLabels)
         failed = metric.getIncorrect(final, thisLabels)
-        numFailed = np.sum(failed)
+        newFailed = np.sum(failed)
+
+        if newFailed == numFailed :
+            print('failures not improving, next.')
+            break
+        numFailed = newFailed
 
         print('score', score, 'failed', numFailed, 'number', len(modelSet), 'id', index, flush=True)
         
@@ -151,6 +157,7 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis, metricP
 def evaluateModel(nextData, labels, allModelSets, transformSet, basis) :
 
     numLevels = len(allModelSets)
+    inputSet = None
     for level in range(0, numLevels) :
         print("-------------------Computing output for layer------------------",level+1)
         theseModels = allModelSets[level]
@@ -170,5 +177,13 @@ def evaluateModel(nextData, labels, allModelSets, transformSet, basis) :
         
         if len(ts) > 2 :
             inputSet = inputSet.reshape((ts[0],ts[1]*ts[2]))
+        
+        if level == numLevels-1 :
+            return inputSet
+        
         inputSet = transformSet[level].transform(inputSet)
+        
+
         nextData = expand(inputSet, basis)
+        print('nextData.shape',inputSet.shape)
+    return inputSet

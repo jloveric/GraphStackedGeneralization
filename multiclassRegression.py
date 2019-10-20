@@ -31,7 +31,8 @@ class MultiOutputRegression :
     def score(self, X, y) :
         #Now do a metric distance, the smaller the better?
         out = self.predict(X)
-        self.score = self.computeScore(out, y)
+        correct, score = self.computeScore(out, y)
+        self.score = score
         return self.score
 
     #Good
@@ -39,16 +40,17 @@ class MultiOutputRegression :
 
         correct = np.where(np.abs(predicted-actual)<=self.tolerance, True, False)
 
-        diff = np.linalg.norm(predicted-actual)
-        diff = diff/diff.size
+        #diff = np.linalg.norm(predicted-actual)
+        #diff = diff/diff.size
+        numCorrect = np.sum(correct)
 
-        return np.sum(correct), diff
+        return np.sum(correct), numCorrect/correct.size
 
     def set_params(self) :
         #something
         return
 
-    def getIncorrect(self,predicted, actual):
+    def getIncorrect(self,predicted, actual) :
         #something
         incorrect = np.where(np.abs(predicted-actual)>self.tolerance, True, False)
         return incorrect.flatten()
@@ -106,7 +108,7 @@ def multiClassRegression(data, labelSets, filename=None) :
 
     
     if labelSets.shape[0]==1 or len(data.shape)==1 :
-        regSet.append(Ridge(alpha=0.5, tol=0.001).fit(data, labelSets.flatten()))
+        regSet.append(Ridge(alpha=0.001, tol=0.001).fit(data, labelSets.flatten()))
     else :
         for i in range(0,labelSets.shape[0]) :
             #reg = LinearRegression().fit(data, labelSets[i])

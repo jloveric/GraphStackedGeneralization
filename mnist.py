@@ -12,7 +12,7 @@ ray.init(num_cpus=4)
 
 X, y = fetch_openml('mnist_784', version=1, return_X_y=True)
 
-useTraining = 6000
+useTraining = 60000
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=useTraining, test_size=10000)
 
@@ -31,7 +31,7 @@ dataTest = expand(X_test, firstExpansion)
 
 #Info for creating the model
 width = 1
-numLayers = 3
+numLayers = 10
 modelsInLayer = [width]*numLayers
 modelsInLayer[-1] = 1
 

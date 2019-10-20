@@ -71,7 +71,8 @@ def basis4(xIn) :
 
 #quintic polynomial
 def basis5(xIn) :
-    x = np.tanh(xIn)
+    #x = np.tanh(xIn)
+    x = xIn
     eta = x
     powEta2 = eta * eta
     powEta3 = eta * powEta2
@@ -211,8 +212,9 @@ def basis5CG1(x) :
     return res1+res2
 
 def basisSplit(xIn, thisBasis) :
-    shape = xIn.shape
+    #shape = xIn.shape
     x = np.copy(np.tanh(xIn)).flatten()
+    x = np.copy(xIn).flatten()
 
     final = np.transpose(thisBasis(x))
 
