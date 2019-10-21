@@ -104,9 +104,6 @@ def multiClassRegression(data, labelSets, filename=None) :
 
     regSet = []
     
-    print('data.shape',data.shape,'labelSets.shape',labelSets.shape)
-
-    
     if labelSets.shape[0]==1 or len(data.shape)==1 :
         regSet.append(Ridge(alpha=0.001, tol=0.001).fit(data, labelSets.flatten()))
     else :

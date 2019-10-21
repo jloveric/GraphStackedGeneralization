@@ -15,7 +15,7 @@ try :
 
     X, y = fetch_openml('mnist_784', version=1, return_X_y=True)
 
-    useTraining = 10000
+    useTraining = 60000
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=useTraining, test_size=10000)
 
@@ -36,11 +36,11 @@ try :
     layerDetails = []
 
     #Input layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 5, maxSubModels = 3, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 5, maxSubModels = 5, expansionFunction=basis0))
 
     #Hidden layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 5, maxSubModels = 3, expansionFunction=basis2))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 5, maxSubModels = 3, expansionFunction=basis2))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 5, maxSubModels = 5, expansionFunction=basis2))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 5, maxSubModels = 5, expansionFunction=basis2))
 
     #Output layer
     layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, expansionFunction=basis2))
