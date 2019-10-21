@@ -4,6 +4,7 @@ from sklearn import preprocessing
 import polynomial
 import ray
 from iteration_utilities import deepflatten
+from layerData import *
 
 
 def expand(data, a) :
@@ -12,8 +13,11 @@ def expand(data, a) :
     return nImages
 
 @ray.remote(num_return_vals=1)
-def classify(model, data) :
-    return model.predict(data) 
+def classify(modelInfo, data) :
+    #The data could be calculated outside this function so not
+    #as much needs to be passed through - though it's all saved
+    #elswhere so maybe it's fine.
+    return modelInfo.model.predict(data[:,modelInfo.inputIndexes])
 
 @ray.remote(num_return_vals=3)
 def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metricPrototype=None,maxFailures=10) :
@@ -21,7 +25,7 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
     numFailed = totalSize
     totalFailures = 0
 
-    if (modelsInLayer > 1) and (lastLayer!=True) :
+    if (modelsInLayer > 1) and (lastLayer!=True) and (p!=1):
         randomSet = np.random.choice([True, False],totalSize,p=[p,(1.0-p)],replace=True)
         thisData = nextData[randomSet]
         thisLabels = nextLabels[randomSet]
@@ -65,12 +69,31 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
         
     return modelSet, totalFailures, index
 
-def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis, metricPrototype) :
+def constructLayerInputs(layerDetails, data) :
+    
+    baseModels = layerDetails.numberOfBaseModels
+    size = data[0].size
+    if layerDetails.inputFeatures == FeatureMap.all :
+        #This is overkill, but will optimize someday
+        layerDetails.inputIndexes = np.array([np.arange(0,size)]*layerDetails.numberOfBaseModels)
+    elif layerDetails.inputFeatures == FeatureMap.even :
+        #Try to split the space evenly
+        os = int(size/baseModels)
+        modelInputs = [np.arange(i*os,(i+1)*os) for i in range(0,baseModels-1)]
+        modelInputs.append(np.arange((baseModels-1)*os, size))
+        layerDetails.inputIndexes = np.array(modelInputs)
 
-    numLayers = len(modelsInLayer)
+    elif layerDetails.inputFeatures == FeatureMap.overlap :
+        #overlap evenly
+        print('layerDetails overlap is not implemented')
+
+def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis, metricPrototype) :
+
+    numLayers = len(layerDetails)
 
     totalSize = nextData.shape[0]
-    p = modelSize/totalSize
+    #p = modelSize/totalSize
+    p=1
 
     allModelSets = []
     transformSet = []
@@ -88,18 +111,42 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis, metricP
 
         oldData = np.copy(nextData)
         print("Constructing layer ------------------------------", len(allModelSets),flush=True)
-        for i in range(0,modelsInLayer[layer]) :
+
+        baseModels = layerDetails[layer].numberOfBaseModels
+        layerData = layerDetails[layer]
+
+        constructLayerInputs(layerData, nextData)
+
+        for i in range(0,baseModels) :
             
-            thisModelSet, totalFailures, index = computeModelSet.remote(nextDataId, nextLabelsId, 
-                                                            modelsInLayer[layer], p, i, 
+            #print('layerData', layerData)
+            #print('layerData.inputInexes[i]', layerData.inputIndexes)
+
+            thisDataId = ray.put(nextData[:,layerData.inputIndexes[i]],weakref=True)
+
+            thisModelSet, totalFailures, index = computeModelSet.remote(thisDataId, nextLabelsId, 
+                                                            layerData.numberOfBaseModels, p, i, 
                                                             lastLayer = (numLayers==1), 
                                                             metricPrototype=metricPrototypeId)
+
+            #Ok, this might need special consideration, not sure
             modelSet.append(thisModelSet)
+            
+            #modelSet.append(thisModelSet)
             failures.append(totalFailures)
 
         index = ray.get(index)
         modelSet = ray.get(modelSet)
-        modelSet = list(deepflatten(modelSet,depth=1))
+
+        #Incomprehensible comprehension
+        #modelSet = [[ModelData(inputIndexes = layerData.inputIndexes[modelGroup], model = modelSet[modelGroup][i]) for i in range(0,len(modelSet[modelGroup]))] for modelGroup in range(0,len(modelSet))]
+        #comprehensible version
+        newModelSet = []
+        for modelGroup in range(0,len(modelSet)) :
+            for i in range(0, len(modelSet[modelGroup])) :
+                newModelSet.append(ModelData(inputIndexes = layerData.inputIndexes[modelGroup], model=modelSet[modelGroup][i]) )
+
+        modelSet = list(deepflatten(newModelSet,depth=1))
         failures = ray.get(failures)
         atLeastOneFailed = any(failures)
         
@@ -113,23 +160,28 @@ def buildParallel(nextData, nextLabels, modelsInLayer, modelSize, basis, metricP
         
         oldDataId = ray.put(oldData, weakref=True)
 
+        #Ok, this is actually correct
         modelSetIds = []
         for i in modelSet :
-            modelSetIds.append(ray.put(i))
+            modelSetIds.append(ray.put(i, weakref=True))
 
         print('creating new classification estimates')
-        inputSet = modelSet[0].predict(oldData)
-        results = []
-        for i in range(1,len(modelSet)) :
-            #print('i', i)
-            results.append(classify.remote(modelSetIds[i],oldDataId))   
+        #inputSet = modelSet[0].model.predict(oldData)
+        results = [classify.remote(modelSetIds[i],oldDataId) for i in range(0, len(modelSet))]
+        
+        #for i in range(1,len(modelSet)) :
+        #    #print('i', i)
+        #    results.append(classify.remote(modelSetIds[i],oldDataId))   
         
         results = ray.get(results)
         
+        #print('results.shape',results.shape)
+
         #ok, this needs to be done in parallel also.
         print('stacking')
-        for i in results :
-            inputSet = np.dstack((inputSet, i))
+        inputSet = results[0]
+        for i in range(1,len(results)) :
+            inputSet = np.dstack((inputSet, results[i]))
 
         ts = inputSet.shape
         if len(ts) > 2 :
@@ -163,14 +215,16 @@ def evaluateModel(nextData, labels, allModelSets, transformSet, basis) :
         theseModels = allModelSets[level]
         numModels = len(theseModels)
         
-        inputSet = theseModels[0].predict(nextData)
-        correct, percent = mr.computeScore(inputSet, labels)
+        theseIndexes = theseModels[0].inputIndexes
+        inputSet = theseModels[0].model.predict(nextData[:,theseIndexes])
+        correct, percent = theseModels[0].model.computeScore(inputSet, labels)
         print('correct', correct, 'fraction correct', percent)
         
         for model in range(1, numModels) :
-            res = theseModels[model].predict(nextData)
+            theseIndexes = theseModels[model].inputIndexes
+            res = theseModels[model].model.predict(nextData[:,theseIndexes])
             inputSet = np.dstack((inputSet, res))
-            correct, percent = theseModels[model].computeScore(res, labels)
+            correct, percent = theseModels[model].model.computeScore(res, labels)
             print('correct', correct, 'fraction correct', percent)
 
         ts = inputSet.shape

@@ -1,4 +1,7 @@
 import numpy as np
+import sys
+#sys.path.append('../')
+
 import multiclassRegression as mr 
 from sklearn import preprocessing
 from sklearn.datasets import fetch_openml

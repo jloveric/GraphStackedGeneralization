@@ -1,5 +1,7 @@
 import numpy as np
 import enum
+from copy import deepcopy
+from polynomial import *
 
 '''
 Enumeration to show how to how the layer uses features from the previous
@@ -12,12 +14,23 @@ class FeatureMap(enum.Enum) :
     overlap = 2
     random = 3 
 
+'''
+Information specific to how to construct a specific layer
+'''
 class LayerInfo :
-    def __init__(self, inputFeatures = FeatureMap.all) :
-        self.inputs = inputs
+    def __init__(self, inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, expansionFunction = basis0) :
+        self.inputFeatures = inputFeatures
         self.inputIndexes = None
-        self.useAllInput = useAllInput
+        self.numberOfBaseModels = numberOfBaseModels
+        self.maxSubModels = maxSubModels
+        self.expansionFunction = expansionFunction
     
+    def clone(self) :
+        return deepcopy(self)
+
+'''
+Information about how a specific model was constructed
+'''    
 class ModelData :
     def __init__(self,inputIndexes = None, useAllInput = True, model = None) :
         self.inputIndexes = inputIndexes
@@ -25,3 +38,6 @@ class ModelData :
 
     def setModel(self, model) :
         self.model = model
+
+    def clone(self) :
+        return deepcopy(self)
