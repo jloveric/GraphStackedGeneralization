@@ -212,7 +212,7 @@ def basis5CG1(x) :
     return res1+res2
 
 def basisSplit(xIn, thisBasis) :
-    #shape = xIn.shape
+    shape = xIn.shape
     x = np.copy(np.tanh(xIn)).flatten()
     x = np.copy(xIn).flatten()
 

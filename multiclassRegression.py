@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import math as math
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestClassifier
 from joblib import dump, load
 import pickle
 from sklearn import preprocessing
@@ -99,6 +100,58 @@ class MultiClassClassification :
     def clone(self) :
         #I don't actually want to clone the models - this is just to get the same initial conditions
         return deepcopy(self)
+
+class RandomForest :
+    def __init__(self, nClasses, maxDepth=None) :
+        #Do something here
+        self.models = None
+        self.correct = None
+        self.score = None
+        self.maxDepth = maxDepth
+        self.nClasses = nClasses
+        self.predictArray = np.arange(0,nClasses)
+
+    #Good
+    def fit(self, X, y) :
+        self.models = [RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
+            max_depth=self.maxDepth, max_features='auto', max_leaf_nodes=None,
+            min_impurity_decrease=0.0, min_impurity_split=None,
+            min_samples_leaf=1, min_samples_split=2,
+            min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=None,
+            oob_score=False, random_state=0, verbose=0, warm_start=False).fit(X,y)]
+        
+        return self
+
+    #Good
+    def predict(self, X) :
+        prob = self.models[0].predict_proba(X)
+        r = np.zeros((prob.shape[0], self.nClasses))
+        r[:,self.models[0].classes_]=prob
+        return r
+
+    def score(self, X, y) :
+        correct, score = scoreSet(self.models, X, y)
+        self.correct = correct
+        self.score = score
+        return self.score
+
+    #Good I think - predicted is the probabilities, actual is the single actual class
+    def computeScore(self, predicted, actual) :
+        return computeScore(predicted, actual)
+
+    def set_params(self) :
+        #something
+        return
+    
+    #good
+    def getIncorrect(self,predicted, actual):
+        #something
+        return returnFailed(predicted, actual)
+
+    def clone(self) :
+        #I don't actually want to clone the models - this is just to get the same initial conditions
+        return deepcopy(self)
+
 
 def multiClassRegression(data, labelSets, filename=None) :
 

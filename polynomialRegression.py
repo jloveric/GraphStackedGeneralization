@@ -127,7 +127,8 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis, metricPr
             thisModelSet, totalFailures, index = computeModelSet.remote(thisDataId, nextLabelsId, 
                                                             layerData.numberOfBaseModels, p, i, 
                                                             lastLayer = (numLayers==1), 
-                                                            metricPrototype=metricPrototypeId)
+                                                            metricPrototype=metricPrototypeId,
+                                                            maxFailures = layerData.maxSubModels)
 
             #Ok, this might need special consideration, not sure
             modelSet.append(thisModelSet)
