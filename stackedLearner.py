@@ -87,7 +87,7 @@ def constructLayerInputs(layerDetails, data) :
         #overlap evenly
         print('layerDetails overlap is not implemented')
 
-def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis, metricPrototype) :
+def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
 
     numLayers = len(layerDetails)
 
@@ -100,7 +100,9 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis, metricPr
     layer = 0
 
     nextLabelsId = ray.put(nextLabels)
-    metricPrototypeId = ray.put(metricPrototype)
+    learnerPrototypeId = []
+    for i in layerDetails :
+        learnerPrototypeId.append(ray.put(i.learnerPrototype))
 
     while numLayers > 0 :
         atLeastOneFailed = False
@@ -127,7 +129,7 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis, metricPr
             thisModelSet, totalFailures, index = computeModelSet.remote(thisDataId, nextLabelsId, 
                                                             layerData.numberOfBaseModels, p, i, 
                                                             lastLayer = (numLayers==1), 
-                                                            metricPrototype=metricPrototypeId,
+                                                            metricPrototype=learnerPrototypeId[layer], #metricPrototypeId,
                                                             maxFailures = layerData.maxSubModels)
 
             #Ok, this might need special consideration, not sure

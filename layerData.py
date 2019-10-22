@@ -18,12 +18,13 @@ class FeatureMap(enum.Enum) :
 Information specific to how to construct a specific layer
 '''
 class LayerInfo :
-    def __init__(self, inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, expansionFunction = basis0) :
+    def __init__(self, inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, expansionFunction = basis0, learnerPrototype=None) :
         self.inputFeatures = inputFeatures
         self.inputIndexes = None
         self.numberOfBaseModels = numberOfBaseModels
         self.maxSubModels = maxSubModels
         self.expansionFunction = expansionFunction
+        self.learnerPrototype = learnerPrototype
     
     def clone(self) :
         return deepcopy(self)

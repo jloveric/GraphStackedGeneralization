@@ -35,19 +35,22 @@ try :
     #Info for creating the model
     layerDetails = []
 
+    rfPrototype = mr.RandomForest(10,maxDepth=20)
+    lsPrototype = mr.MultiClassClassification(nLabels=10)
+
     #Input layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 20, maxSubModels = 7, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5, learnerPrototype=rfPrototype,expansionFunction=basis0))
 
     #Hidden layer
     #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 20, maxSubModels = 7, expansionFunction=basis2))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 7, expansionFunction=basis2))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5,learnerPrototype=lsPrototype, expansionFunction=basis2))
 
     #Output layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 7, expansionFunction=basis2))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 7, learnerPrototype=rfPrototype, expansionFunction=basis2))
 
     ## Build the stacked model - use almost all examples to build each model - can't use them all or every model will be identical.
     #allModelSets, transformSet, basis = buildParallel(data, y_train, layerDetails, int(0.95*useTraining), basis5, mr.MultiClassClassification(nLabels=10))
-    allModelSets, transformSet, basis = buildParallel(data, y_train, layerDetails, int(0.95*useTraining), basis0, mr.RandomForest(10,maxDepth=20))
+    allModelSets, transformSet, basis = buildParallel(data, y_train, layerDetails, int(0.95*useTraining), basis2)
 
     ## Now run through the test data
     print('testing ---------------------------------------------')
