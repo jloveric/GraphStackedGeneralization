@@ -50,7 +50,7 @@ try :
 
     ## Build the stacked model - use almost all examples to build each model - can't use them all or every model will be identical.
     #allModelSets, transformSet, basis = buildParallel(data, y_train, layerDetails, int(0.95*useTraining), basis5, mr.MultiClassClassification(nLabels=10))
-    allModelSets, transformSet, basis = buildParallel(data, y_train, layerDetails, int(0.95*useTraining), basis2)
+    allModelSets, transformSet, basis = buildParallel(data, y_train, layerDetails, int(0.95*useTraining), basis5)
 
     ## Now run through the test data
     print('testing ---------------------------------------------')
