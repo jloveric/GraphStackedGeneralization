@@ -4,15 +4,7 @@ https://www.flickr.com/photos/cascadebicycleclub/47150120251/in/album-7215770680
 '''
 
 from scipy import misc
-import glob
-import cv2
-import os
 import numpy as np
-import matplotlib.pyplot as plt
-import math
-import h5py
-from sklearn.decomposition import PCA
-import hspace
 
 #Compute the training samples for the original data for a convolutional layer. Of course
 #these aren't really convolutions, they are just locally receptive fields.
@@ -39,7 +31,7 @@ def createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, data, labe
 
 #Just create the indexes for each of the models in a convolutional layer.  Yes each model is
 #actually identical so we don't need to repeat them.
-def createInput2DMapping(width, height, stride, modelWidth) :
+def createInput2DMapping(width, height, stride) :
 
     indexes = np.arange(0,width*height).reshape((height,width))
     indexSet = []
@@ -49,3 +41,11 @@ def createInput2DMapping(width, height, stride, modelWidth) :
             indexSet.append(indexes[i:i+sampleWidth,j:j+sampleWidth,:].flatten())      
                     
     return np.array(indexSet)
+
+def applyModel(input, inputMapping, model) :
+
+    output = []
+    for i in range(0, len(inputMapping)) :
+        output.append(model.classify(input[inputMapping[i]]))
+    
+    return np.array(output)

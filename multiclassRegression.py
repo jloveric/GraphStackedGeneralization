@@ -10,9 +10,41 @@ import pickle
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
 import ray
+from abc import ABC, abstractmethod
+from graphMapping import *
+
+class ModelBase(ABC) :
+
+    @abstractmethod
+    def fit(self, X, y) :
+        pass
+
+    @abstractmethod
+    def predict(self, X) :
+        pass
+
+    @abstractmethod
+    def score(self, X, y) :
+        pass
+
+    @abstractmethod
+    def computeScore(self, predicted, actual) :
+        pass
+
+    @abstractmethod
+    def set_params(self) :
+        pass
+    
+    @abstractmethod
+    def getIncorrect(self,predicted, actual):
+        pass
+
+    def clone(self) :
+        return deepcopy(self)
+
 
 #@ray.remote
-class MultiOutputRegression :
+class PolynomialRegression(ModelBase) :
     def __init__(self, nOutputs, tolerance=1.0e-3) :
         self.models = None
         self.correct = None
@@ -56,15 +88,11 @@ class MultiOutputRegression :
         incorrect = np.where(np.abs(predicted-actual)>self.tolerance, True, False)
         return incorrect.flatten()
 
-    def clone(self) :
-        #I don't actually want to clone the models - this is just to get the same initial conditions
-        return deepcopy(self)
-
 # I want on model per class, one against all.  You can think of this
 # as having on neuron compute the probability for a single class
 # which I think is what I want - instead of one computing for every class.
 #@ray.remote
-class MultiClassClassification :
+class PolynomialClassification(ModelBase) :
     def __init__(self, nLabels) :
         #Do something here
         self.models = None
@@ -97,11 +125,7 @@ class MultiClassClassification :
         #something
         return returnFailed(predicted, actual)
 
-    def clone(self) :
-        #I don't actually want to clone the models - this is just to get the same initial conditions
-        return deepcopy(self)
-
-class RandomForest :
+class RandomForest(ModelBase) :
     def __init__(self, nClasses, maxDepth=None) :
         #Do something here
         self.models = None
@@ -148,9 +172,45 @@ class RandomForest :
         #something
         return returnFailed(predicted, actual)
 
-    def clone(self) :
-        #I don't actually want to clone the models - this is just to get the same initial conditions
-        return deepcopy(self)
+class Convolutional2D(ModelBase) :
+
+    def __init__(self, modelPrototype = None, width, height, sampleWidth, inputStride, outputStride) :
+        self.modelPrototype = modelPrototype
+        self.models = None
+        self.mapping = None
+        self.width = width
+        self.height = height
+        self.sampleWidth = sampleWidth
+        self.inputStride = inputStride
+        self.outputStride = outputStride
+
+    def fit(X, y) :
+        #First create the new form of the training examples - could be a very long time
+        newSamples, newLabels = createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, X, y)
+        thisModel = self.modelPrototype.clone()
+        thisModel.fit(X,y)
+        self.models = thisModel.models
+
+    def predict(self, X) :
+        if self.mapping==None :
+            self.mapping = createInput2DMapping(self.width, self.height, self.outputStride)
+        
+        return applyModel(X, self.mapping, model)
+
+    def score(self, X, y) :
+        correct, score = scoreSet(self.models, X, y)
+        self.correct = correct
+        self.score = score
+        return self.score 
+
+    def computeScore(self, predicted, actual) :
+        return computeScore(predicted, actual)
+
+    def set_params(self, X, y) :
+        pass
+
+    def getIncorrect(self, X, y) :
+        return returnFailed(predicted, actual)
 
 
 def multiClassRegression(data, labelSets, filename=None) :
