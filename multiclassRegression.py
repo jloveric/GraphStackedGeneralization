@@ -174,7 +174,7 @@ class RandomForest(ModelBase) :
 
 class Convolutional2D(ModelBase) :
 
-    def __init__(self, modelPrototype = None, width, height, sampleWidth, inputStride, outputStride) :
+    def __init__(self, modelPrototype, width, height, sampleWidth, inputStride, outputStride) :
         self.modelPrototype = modelPrototype
         self.models = None
         self.mapping = None

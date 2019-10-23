@@ -120,9 +120,6 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
         constructLayerInputs(layerData, nextData)
 
         for i in range(0,baseModels) :
-            
-            #print('layerData', layerData)
-            #print('layerData.inputInexes[i]', layerData.inputIndexes)
 
             thisDataId = ray.put(nextData[:,layerData.inputIndexes[i]],weakref=True)
 
@@ -169,16 +166,8 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
             modelSetIds.append(ray.put(i, weakref=True))
 
         print('creating new classification estimates')
-        #inputSet = modelSet[0].model.predict(oldData)
         results = [classify.remote(modelSetIds[i],oldDataId) for i in range(0, len(modelSet))]
-        
-        #for i in range(1,len(modelSet)) :
-        #    #print('i', i)
-        #    results.append(classify.remote(modelSetIds[i],oldDataId))   
-        
         results = ray.get(results)
-        
-        #print('results.shape',results.shape)
 
         #ok, this needs to be done in parallel also.
         print('stacking')
