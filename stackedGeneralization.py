@@ -1,5 +1,5 @@
 import numpy as np
-import multiclassRegression as mr 
+import modelAdapter as mr 
 from sklearn import preprocessing
 import polynomial
 import ray

@@ -184,9 +184,9 @@ class Convolutional2D(ModelBase) :
         self.inputStride = inputStride
         self.outputStride = outputStride
 
-    def fit(X, y) :
+    def fit(self, X, y) :
         #First create the new form of the training examples - could be a very long time
-        newSamples, newLabels = createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, X, y)
+        newSamples, newLabels = createTrainingSamples2Dfrom1D(self.width, self.height, self.sampleWidth, self.inputStride, X, y)
         thisModel = self.modelPrototype.clone()
         thisModel.fit(X,y)
         self.models = thisModel.models

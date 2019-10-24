@@ -5,6 +5,7 @@ https://www.flickr.com/photos/cascadebicycleclub/47150120251/in/album-7215770680
 
 from scipy import misc
 import numpy as np
+import logging
 
 #Compute the training samples for the original data for a convolutional layer. Of course
 #these aren't really convolutions, they are just locally receptive fields.
@@ -12,12 +13,13 @@ def createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, data, labe
 
     examples = data.shape[0]
     size = data.shape[1]
-    channels = int(size/(width*height))
 
+    channels = int(size/(width*height))
+    logging.debug('width', width, 'height', height,'data.shape', data.shape)
     dataNew = data.reshape((examples,width,height,channels))
     
     newSet = []
-    newlabels = []
+    newLabels = []
     for case in range(0,examples) :
 
         label = labels[case]

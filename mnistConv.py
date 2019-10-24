@@ -1,5 +1,5 @@
 import numpy as np
-import multiclassRegression as mr 
+import modelAdapter as mr 
 from sklearn import preprocessing
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
@@ -40,11 +40,11 @@ try :
     convPrototype = mr.Convolutional2D(rfPrototype, 28, 28, 4, 1, 4)
 
     #Input layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5, learnerPrototype=convPrototype,expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 10, maxSubModels = 5, learnerPrototype=convPrototype, expansionFunction=basis0))
 
     #Hidden layer
     #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 20, maxSubModels = 7, expansionFunction=basis2))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5,learnerPrototype=convPrototype, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5,learnerPrototype=rfPrototype, expansionFunction=basis0))
 
     #Output layer
     layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 7, learnerPrototype=rfPrototype, expansionFunction=basis0))
