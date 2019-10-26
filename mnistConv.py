@@ -15,7 +15,7 @@ try :
 
     X, y = fetch_openml('mnist_784', version=1, return_X_y=True)
 
-    useTraining = 1000
+    useTraining = 60000
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=useTraining, test_size=10000)
 
@@ -37,10 +37,10 @@ try :
 
     rfPrototype = mr.RandomForest(10,maxDepth=20)
     lsPrototype = mr.PolynomialClassification(nLabels=10)
-    convPrototype = mr.Convolutional2D(rfPrototype, 28, 28, 4, 1, 4)
+    convPrototype = mr.Convolutional2D(rfPrototype, 28, 28, 4, 1, 4, maxSamples = 1000)
 
     #Input layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 10, maxSubModels = 5, learnerPrototype=convPrototype, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 10, learnerPrototype=convPrototype, expansionFunction=basis0))
 
     #Hidden layer
     #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 20, maxSubModels = 7, expansionFunction=basis2))

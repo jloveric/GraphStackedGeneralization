@@ -174,7 +174,7 @@ class RandomForest(ModelBase) :
 
 class Convolutional2D(ModelBase) :
 
-    def __init__(self, modelPrototype, width, height, sampleWidth, inputStride, outputStride) :
+    def __init__(self, modelPrototype, width, height, sampleWidth, inputStride, outputStride, maxSamples=None) :
         self.modelPrototype = modelPrototype
         self.models = None
         self.mapping = None
@@ -183,19 +183,26 @@ class Convolutional2D(ModelBase) :
         self.sampleWidth = sampleWidth
         self.inputStride = inputStride
         self.outputStride = outputStride
+        self.thisModel = None
+        self.numModels = None
+        self.maxSamples =  maxSamples
 
     def fit(self, X, y) :
         #First create the new form of the training examples - could be a very long time
-        newSamples, newLabels = createTrainingSamples2Dfrom1D(self.width, self.height, self.sampleWidth, self.inputStride, X, y)
-        thisModel = self.modelPrototype.clone()
-        thisModel.fit(X,y)
-        self.models = thisModel.models
+        newSamples, newLabels = createTrainingSamples2Dfrom1D(self.width, self.height, self.sampleWidth, self.inputStride, self.maxSamples, X, y)
+        self.thisModel = self.modelPrototype.clone()
+
+        #print('newSamples.shape', newSamples.shape, 'newLabels.shape', newLabels.shape)
+        self.thisModel.fit(newSamples,newLabels)
+        self.models = self.thisModel.models
 
     def predict(self, X) :
-        if self.mapping==None :
-            self.mapping = createInput2DMapping(self.width, self.height, self.outputStride)
+        if self.mapping is None :
+            self.mapping = createInput2DMapping(self.width, self.height, self.outputStride, self.sampleWidth)
+            self.numModels = self.mapping.shape[0]
         
-        return applyModel(X, self.mapping, model)
+        #print('mapping.shape', self.mapping.shape)
+        return applyModel(X, self.mapping, self.thisModel)
 
     def score(self, X, y) :
         correct, score = scoreSet(self.models, X, y)
@@ -204,13 +211,32 @@ class Convolutional2D(ModelBase) :
         return self.score 
 
     def computeScore(self, predicted, actual) :
-        return computeScore(predicted, actual)
+        correct = (actual.shape[0]-np.sum(self.getIncorrect(predicted,actual)))
+        score  = correct/actual.shape[0]
+        return [correct, score]
 
     def set_params(self, X, y) :
         pass
 
-    def getIncorrect(self, X, y) :
-        return returnFailed(predicted, actual)
+    def getIncorrect(self, predicted, actual) :
+
+        #Should actually do an average for each 49 groups
+        reduced = []
+        numClasses = int(predicted.shape[1]/self.numModels)
+        #print('numClasses', numClasses)
+        shape = predicted.shape
+        temp = predicted.reshape((shape[0], self.numModels, numClasses))
+        
+        reduced = np.mean(temp,axis=1)
+        
+        #print('reduced.shape', reduced.shape)
+        #reduced = np.array(reduced)
+        #print('actual.shape', actual.shape, 'predicted.shape', predicted.shape)
+        #print('reduced.shape', reduced.shape)
+        best=np.argmax(reduced, axis=1)
+        pair = np.column_stack(tuple([best,actual]))
+        condition = (pair[:,0] != pair[:,1])
+        return condition #np.extract(condition, np.range())
 
 
 def multiClassRegression(data, labelSets, filename=None) :
@@ -284,7 +310,7 @@ as 0 to n-1
 '''
 def computeScore(final, labels, dumpError=False) :
     best=np.argmax(final, axis=1)
-    #print('best.shape',best.shape)
+    #print('final.shape', final.shape, 'best.shape',best.shape,'labels',labels.shape)
 
     pair = np.column_stack(tuple([best, labels]))
     #print('best',pair)
