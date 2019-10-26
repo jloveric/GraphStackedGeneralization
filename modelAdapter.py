@@ -188,6 +188,7 @@ class Convolutional2D(ModelBase) :
         self.maxSamples =  maxSamples
 
     def fit(self, X, y) :
+        #print('fit.shape in', X.shape)
         #First create the new form of the training examples - could be a very long time
         newSamples, newLabels = createTrainingSamples2Dfrom1D(self.width, self.height, self.sampleWidth, self.inputStride, self.maxSamples, X, y)
         self.thisModel = self.modelPrototype.clone()
@@ -197,10 +198,13 @@ class Convolutional2D(ModelBase) :
         self.models = self.thisModel.models
 
     def predict(self, X) :
+        #print('X.shape',X.shape)
         if self.mapping is None :
-            self.mapping = createInput2DMapping(self.width, self.height, self.outputStride, self.sampleWidth)
+            self.channels = int(X.shape[1]/(self.width*self.height))
+            self.mapping = createInput2DMapping(self.width, self.height, self.outputStride, self.sampleWidth, self.channels)
             self.numModels = self.mapping.shape[0]
-        
+       
+
         #print('mapping.shape', self.mapping.shape)
         return applyModel(X, self.mapping, self.thisModel)
 

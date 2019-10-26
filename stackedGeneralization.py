@@ -20,7 +20,7 @@ def classify(modelInfo, data) :
     return modelInfo.model.predict(data[:,modelInfo.inputIndexes])
 
 @ray.remote(num_return_vals=3)
-def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metricPrototype=None,maxFailures=10) :
+def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=False, metricPrototype=None, maxFailures=10) :
     totalSize = nextData.shape[0]
     numFailed = totalSize
     totalFailures = 0
@@ -126,7 +126,7 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
             thisModelSet, totalFailures, index = computeModelSet.remote(thisDataId, nextLabelsId, 
                                                             layerData.numberOfBaseModels, p, i, 
                                                             lastLayer = (numLayers==1), 
-                                                            metricPrototype=learnerPrototypeId[layer], #metricPrototypeId,
+                                                            metricPrototype=learnerPrototypeId[layer],
                                                             maxFailures = layerData.maxSubModels)
 
             #Ok, this might need special consideration, not sure

@@ -38,13 +38,15 @@ try :
     rfPrototype = mr.RandomForest(10,maxDepth=20)
     lsPrototype = mr.PolynomialClassification(nLabels=10)
     convPrototype = mr.Convolutional2D(rfPrototype, 28, 28, 4, 1, 4, maxSamples = 1000)
+    convPrototype2 = mr.Convolutional2D(rfPrototype, 7, 7, 4, 1, 4, maxSamples = 10000)
 
     #Input layer
     layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 10, learnerPrototype=convPrototype, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 10, learnerPrototype=convPrototype2, expansionFunction=basis0))
 
     #Hidden layer
     #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 20, maxSubModels = 7, expansionFunction=basis2))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5,learnerPrototype=rfPrototype, expansionFunction=basis0))
+    #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.even, numberOfBaseModels = 10, maxSubModels = 5,learnerPrototype=rfPrototype, expansionFunction=basis0))
 
     #Output layer
     layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 7, learnerPrototype=rfPrototype, expansionFunction=basis0))

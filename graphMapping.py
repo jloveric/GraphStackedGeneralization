@@ -16,9 +16,9 @@ def createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, maxSamples
     size = data.shape[1]
 
     channels = int(size/(width*height))
-    logging.debug('width', width, 'height', height,'data.shape', data.shape)
+    #print('width', width, 'height', height,'data.shape', data.shape, 'sampleWidth', sampleWidth,'stride', stride, 'maxSamples', maxSamples,'channels',channels)
     dataNew = data[:examples].reshape((examples,width,height,channels))
-    
+    #print('dataNew.shape', dataNew.shape)
     newSet = []
     newLabels = []
 
@@ -41,14 +41,14 @@ def createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, maxSamples
 
 #Just create the indexes for each of the models in a convolutional layer.  Yes each model is
 #actually identical so we don't need to repeat them.
-def createInput2DMapping(width, height, stride, sampleWidth) :
-
-    indexes = np.arange(0,width*height).reshape((height,width))
+def createInput2DMapping(width, height, stride, sampleWidth, channels) :
+    #print('width', width, 'height', height, 'channels', channels)
+    indexes = np.arange(0,width*height*channels).reshape((height,width,channels))
     indexSet = []
     
     for i in range(0, height-sampleWidth+1, stride) :
         for j in range(0, width-sampleWidth+1, stride) :
-            indexSet.append(indexes[i:i+sampleWidth,j:j+sampleWidth].flatten())      
+            indexSet.append(indexes[i:i+sampleWidth,j:j+sampleWidth,:].flatten())      
                     
     return np.array(indexSet)
 
