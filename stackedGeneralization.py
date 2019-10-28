@@ -24,7 +24,7 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
     totalSize = nextData.shape[0]
     numFailed = totalSize
     totalFailures = 0
-
+    print('maxFailures', maxFailures)
     if (modelsInLayer > 1) and (lastLayer!=True) and (p!=1):
         randomSet = np.random.choice([True, False],totalSize,p=[p,(1.0-p)],replace=True)
         thisData = nextData[randomSet]
@@ -59,7 +59,7 @@ def computeModelSet(nextData, nextLabels, modelsInLayer, p, index, lastLayer=Fal
         if lastLayer == True :
             break
         
-        if totalFailures > maxFailures :
+        if totalFailures >= maxFailures :
             break
 
         if numFailed > 0 :
@@ -99,10 +99,10 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
     transformSet = []
     layer = 0
 
-    nextLabelsId = ray.put(nextLabels)
+    nextLabelsId = ray.put(nextLabels, weakref=True)
     learnerPrototypeId = []
     for i in layerDetails :
-        learnerPrototypeId.append(ray.put(i.learnerPrototype))
+        learnerPrototypeId.append(ray.put(i.learnerPrototype, weakref=True))
 
     while numLayers > 0 :
         atLeastOneFailed = False
@@ -138,9 +138,6 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
         index = ray.get(index)
         modelSet = ray.get(modelSet)
 
-        #Incomprehensible comprehension
-        #modelSet = [[ModelData(inputIndexes = layerData.inputIndexes[modelGroup], model = modelSet[modelGroup][i]) for i in range(0,len(modelSet[modelGroup]))] for modelGroup in range(0,len(modelSet))]
-        #comprehensible version
         newModelSet = []
         for modelGroup in range(0,len(modelSet)) :
             for i in range(0, len(modelSet[modelGroup])) :

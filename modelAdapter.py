@@ -126,7 +126,7 @@ class PolynomialClassification(ModelBase) :
         return returnFailed(predicted, actual)
 
 class RandomForest(ModelBase) :
-    def __init__(self, nClasses, maxDepth=None) :
+    def __init__(self, nClasses, maxDepth=None, n_jobs=None, n_estimators=10) :
         #Do something here
         self.models = None
         self.correct = None
@@ -134,6 +134,8 @@ class RandomForest(ModelBase) :
         self.maxDepth = maxDepth
         self.nClasses = nClasses
         self.predictArray = np.arange(0,nClasses)
+        self.n_jobs = n_jobs
+        self.n_estimators = n_estimators
 
     #Good
     def fit(self, X, y) :
@@ -141,7 +143,7 @@ class RandomForest(ModelBase) :
             max_depth=self.maxDepth, max_features='auto', max_leaf_nodes=None,
             min_impurity_decrease=0.0, min_impurity_split=None,
             min_samples_leaf=1, min_samples_split=2,
-            min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=None,
+            min_weight_fraction_leaf=0.0, n_estimators=self.n_estimators, n_jobs=self.n_jobs,
             oob_score=False, random_state=0, verbose=0, warm_start=False).fit(X,y)]
         
         return self
@@ -150,7 +152,8 @@ class RandomForest(ModelBase) :
     def predict(self, X) :
         prob = self.models[0].predict_proba(X)
         r = np.zeros((prob.shape[0], self.nClasses))
-        r[:,self.models[0].classes_]=prob
+        #print('classes', self.models[0].classes_)
+        r[:,self.models[0].classes_.astype(np.int)]=prob
         return r
 
     def score(self, X, y) :
@@ -190,7 +193,7 @@ class Convolutional2D(ModelBase) :
     def fit(self, X, y) :
         #print('fit.shape in', X.shape)
         #First create the new form of the training examples - could be a very long time
-        newSamples, newLabels = createTrainingSamples2Dfrom1D(self.width, self.height, self.sampleWidth, self.inputStride, self.maxSamples, X, y)
+        newSamples, newLabels = createTrainingSamples2Dfrom1D(self.width, self.height, self.sampleWidth, self.inputStride, self.maxSamples, X, y,dtype=np.float16)
         self.thisModel = self.modelPrototype.clone()
 
         #print('newSamples.shape', newSamples.shape, 'newLabels.shape', newLabels.shape)
@@ -206,7 +209,7 @@ class Convolutional2D(ModelBase) :
        
 
         #print('mapping.shape', self.mapping.shape)
-        return applyModel(X, self.mapping, self.thisModel)
+        return applyModel(X, self.mapping, self.thisModel,dtype=np.float16)
 
     def score(self, X, y) :
         correct, score = scoreSet(self.models, X, y)
