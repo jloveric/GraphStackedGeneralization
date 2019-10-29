@@ -20,10 +20,10 @@ try :
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=useTraining, test_size=10000)
 
     #Put in the range -1 to 1
-    X_train = np.array(X_train)/128.0 - 1.0
+    X_train = np.array(X_train).astype(np.float16)/128.0 - 1.0
     y_train = np.array(y_train).astype(np.int)
 
-    X_test = np.array(X_test)/128 - 1.0
+    X_test = np.array(X_test).astype(np.float16)/128 - 1.0
     y_test = np.array(y_test).astype(np.int)
 
     ## The first layer is expanded differently than the internal
@@ -35,20 +35,19 @@ try :
     #Info for creating the model
     layerDetails = []
 
-    rfPrototype = mr.RandomForest(10,maxDepth=20, n_jobs=4, n_estimators=100)
-    rfPrototypeFinal = mr.RandomForest(10, maxDepth=None, n_jobs=4, n_estimators=1000)
+    rfPrototype = mr.RandomForest(10,maxDepth=20, n_jobs=1, n_estimators=10)
+    rfPrototypeFinal = mr.RandomForest(10, maxDepth=None, n_jobs=1, n_estimators=1000)
 
     lsPrototype = mr.PolynomialClassification(nLabels=10)
 
     tPrototype = rfPrototype
 
-    convPrototype = mr.Convolutional2D(tPrototype, 28, 28, 5, 1, 1, maxSamples = 100000)
-    convPrototype2 = mr.Convolutional2D(tPrototype, 24, 24, 2, 2, 2, maxSamples = 100000)
-    convPrototype3 = mr.Convolutional2D(tPrototype, 12, 12, 5, 1, 1, maxSamples = 100000)
-    convPrototype4 = mr.Convolutional2D(tPrototype, 8, 8, 2, 2, 2, maxSamples = 100000)
-    convPrototype5 = mr.Convolutional2D(tPrototype, 4, 4, 2, 1, 1, maxSamples = 100000)
-    convPrototype6 = mr.Convolutional2D(tPrototype, 8, 8, 5, 1, 1, maxSamples = 100000)
-    convPrototype7 = mr.Convolutional2D(tPrototype, 4, 4, 2, 1, 1, maxSamples = 100000)
+    convPrototype = mr.Convolutional2D(tPrototype, 28, 28, 3, 1, 1, maxSamples = 100000)
+    convPrototype2 = mr.Convolutional2D(tPrototype, 26, 26, 3, 1, 1, maxSamples = 100000)
+    convPrototype3 = mr.Convolutional2D(tPrototype, 24, 24, 2, 1, 2, maxSamples = 100000)
+    convPrototype4 = mr.Convolutional2D(tPrototype, 12, 12, 3, 1, 1, maxSamples = 100000)
+    convPrototype5 = mr.Convolutional2D(tPrototype, 10, 10, 3, 1, 1, maxSamples = 100000)
+    convPrototype6 = mr.Convolutional2D(tPrototype, 8, 8, 2, 1, 2, maxSamples = 100000)
     
     
     '''
@@ -62,13 +61,13 @@ try :
     '''
 
     #Input layer
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 2, learnerPrototype=convPrototype, expansionFunction=basis0))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 2, learnerPrototype=convPrototype2, expansionFunction=basis0))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 5, learnerPrototype=convPrototype3, expansionFunction=basis0))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 5, learnerPrototype=convPrototype4, expansionFunction=basis0))
-    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 10, learnerPrototype=convPrototype5, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, learnerPrototype=convPrototype, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, learnerPrototype=convPrototype2, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, learnerPrototype=convPrototype3, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, learnerPrototype=convPrototype4, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, learnerPrototype=convPrototype5, expansionFunction=basis0))
+    layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 0, learnerPrototype=convPrototype6, expansionFunction=basis0))
     
-    #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 1, learnerPrototype=convPrototype6, expansionFunction=basis0))
     #layerDetails.append(LayerInfo(inputFeatures = FeatureMap.all, numberOfBaseModels = 1, maxSubModels = 1, learnerPrototype=convPrototype7, expansionFunction=basis0))
 
     #Hidden layer

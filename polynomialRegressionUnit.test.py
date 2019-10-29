@@ -1,13 +1,19 @@
 import unittest
-from polynomialRegression import *
+from stackedGeneralization import *
 from layerData import *
 from polynomial import *
+from graphMapping import *
 import numpy as np
-import cv2
 import os
 
 class TestHSpace(unittest.TestCase):
     
+    def test_graphMapping(self) :
+
+        ans = createInput2DMapping(4, 4, 2, 2, 1) 
+        print('ans', ans)
+
+    '''
     def test_constructLayerInputs(self):
         
         layerDetails = []
@@ -44,6 +50,7 @@ class TestHSpace(unittest.TestCase):
         self.assertTrue(layerDetails[2].inputIndexes[10].size==10)
         self.assertTrue(layerDetails[2].inputIndexes[0].size==4)
         print(layerDetails[2].inputIndexes)
+    '''
 
 
     

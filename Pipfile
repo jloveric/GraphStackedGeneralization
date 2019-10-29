@@ -8,6 +8,7 @@ ray = "*"
 sklearn = "*"
 matplotlib = "*"
 jupyter = "*"
+iteration-utilities = "*"
 
 [dev-packages]
 

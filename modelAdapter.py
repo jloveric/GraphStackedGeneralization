@@ -139,6 +139,9 @@ class RandomForest(ModelBase) :
 
     #Good
     def fit(self, X, y) :
+        #This should probably performed in a better location
+        X = np.nan_to_num(X)
+
         self.models = [RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
             max_depth=self.maxDepth, max_features='auto', max_leaf_nodes=None,
             min_impurity_decrease=0.0, min_impurity_split=None,

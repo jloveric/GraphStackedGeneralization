@@ -36,7 +36,6 @@ def createTrainingSamples2Dfrom1D(width, height, sampleWidth, stride, maxSamples
         
         case = case + 1
 
-                    
     return np.array(newSet,dtype=dtype), np.array(newLabels,dtype=dtype)
 
 #Just create the indexes for each of the models in a convolutional layer.  Yes each model is

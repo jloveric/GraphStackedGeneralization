@@ -7,10 +7,10 @@ from iteration_utilities import deepflatten
 from layerData import *
 
 
-def expand(data, a) :
+def expand(data, a,dtype=np.float16) :
     nImages = a(data)
     nImages = nImages.reshape(nImages.shape[0],nImages.shape[1]*nImages.shape[2])
-    return nImages
+    return nImages.astype(dtype)
 
 @ray.remote(num_return_vals=1)
 def classify(modelInfo, data) :
@@ -87,8 +87,8 @@ def constructLayerInputs(layerDetails, data) :
         #overlap evenly
         print('layerDetails overlap is not implemented')
 
-def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
-
+def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis, dtype = np.float16) :
+    print('building parallel')
     numLayers = len(layerDetails)
 
     totalSize = nextData.shape[0]
@@ -101,8 +101,10 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
 
     nextLabelsId = ray.put(nextLabels, weakref=True)
     learnerPrototypeId = []
+    print('Pushing labels to remote.')
     for i in layerDetails :
         learnerPrototypeId.append(ray.put(i.learnerPrototype, weakref=True))
+        #learnerPrototypeId.append(ray.remote(i.learnerPrototype, num_return_vals=1))
 
     while numLayers > 0 :
         atLeastOneFailed = False
@@ -119,15 +121,18 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
 
         constructLayerInputs(layerData, nextData)
 
+        idHolder = []
         for i in range(0,baseModels) :
 
             thisDataId = ray.put(nextData[:,layerData.inputIndexes[i]],weakref=True)
+            idHolder.append(thisDataId)
 
             thisModelSet, totalFailures, index = computeModelSet.remote(thisDataId, nextLabelsId, 
                                                             layerData.numberOfBaseModels, p, i, 
                                                             lastLayer = (numLayers==1), 
                                                             metricPrototype=learnerPrototypeId[layer],
                                                             maxFailures = layerData.maxSubModels)
+            
 
             #Ok, this might need special consideration, not sure
             modelSet.append(thisModelSet)
@@ -135,12 +140,21 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
             #modelSet.append(thisModelSet)
             failures.append(totalFailures)
 
+        #Record just so we can free later on
+        modelSetTemp = modelSet
+        
         index = ray.get(index)
         modelSet = ray.get(modelSet)
+
+        #Try and manually free this stuff since it seems garbage collection is not happening when it should???
+        ray.internal.free(modelSetTemp)
+        ray.internal.free(idHolder)
+        ray.internal.free(nextDataId)
 
         newModelSet = []
         for modelGroup in range(0,len(modelSet)) :
             for i in range(0, len(modelSet[modelGroup])) :
+                #ok, this is memory inefficient because these indexes can be quite large, they could be recomputed on the fly instead.
                 newModelSet.append(ModelData(inputIndexes = layerData.inputIndexes[modelGroup], model=modelSet[modelGroup][i]) )
 
         modelSet = list(deepflatten(newModelSet,depth=1))
@@ -166,6 +180,9 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
         results = [classify.remote(modelSetIds[i],oldDataId) for i in range(0, len(modelSet))]
         results = ray.get(results)
 
+        #Try and manually free this data
+        ray.internal.free(oldDataId)
+
         #ok, this needs to be done in parallel also.
         print('stacking')
         inputSet = results[0]
@@ -187,7 +204,7 @@ def buildParallel(nextData, nextLabels, layerDetails, modelSize, basis) :
         nextLabels = nextLabels
         numLayers = numLayers -1
 
-        if atLeastOneFailed == False :
+        if (atLeastOneFailed == False) and (layerData.maxSubModels != 0):
             print('exiting early since there were no failures on submodels')
             break
 
