@@ -45,7 +45,7 @@ class ModelBase(ABC) :
 
 #@ray.remote
 class PolynomialRegression(ModelBase) :
-    def __init__(self, nOutputs, tolerance=1.0e-3) :
+    def __init__(self, nOutputs, tolerance=1.0e-2) :
         self.models = None
         self.correct = None
         self.score = None
@@ -282,15 +282,16 @@ def booleanSingleClassLabel(labels,n) :
         labelSets.append(b)
     return np.array(labelSets)
 
-def classify(regSets, images) :
+def classify(regSets, images,dtype=np.float16) :
+    #print('images.dtype', images.dtype)
 
     classifications = []
     for i in range(0, len(regSets)):
         ans = regSets[i].predict(images)   
-        classifications.append(ans)
+        classifications.append(ans.astype(dtype))
 
-    final = np.column_stack(tuple(classifications))
-
+    final = np.column_stack(tuple(classifications)).astype(dtype)
+    #print('final.dtype', final.dtype)
     return final
 
 #Single best guess (largest value)

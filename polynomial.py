@@ -19,8 +19,8 @@ def basis1DG(xIn) :
 #quadratic polynomial
 def basis2(xIn) :
     #flatten
-    x = np.tanh(xIn)
-    #x = xIn
+    #x = np.tanh(xIn)
+    x = xIn
     temp = np.array([0.5*x*(x-1), -1.0*(x+1)*(x-1), 0.5*x*(x+1)])
     
     return swapAxes(temp)
@@ -71,8 +71,8 @@ def basis4(xIn) :
 
 #quintic polynomial
 def basis5(xIn) :
-    #x = np.tanh(xIn)
-    x = xIn
+    x = np.tanh(xIn)
+    #x = xIn
     eta = x
     powEta2 = eta * eta
     powEta3 = eta * powEta2

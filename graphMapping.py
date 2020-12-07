@@ -65,16 +65,29 @@ def applyModel(input, inputMapping, model, dtype=np.float16) :
     #print('final.shape applyModel', final.shape)
     return final
 
-'''
-def maxPooling(input, inputMapping, model, dtype=np.float16) :
-    #print('input.shape', input.shape, 'inputMapping.shape', inputMapping.shape)
-    output = []
-    for i in range(0, len(inputMapping)) :
-        ni = input[:,inputMapping[i]]
-        output.append(model.predict(input[:,inputMapping[i]]))
+
+def maxPooling(width, height, sampleWidth, stride, data, labels, dtype=np.float16) :
+
+    examples = data.shape[0]
     
-    final = np.array(output,dtype=dtype).transpose((1,0,2))
-    shape = final.shape 
-    final = final.reshape((shape[0],shape[1]*shape[2]))
-    #print('final.shape applyModel', final.shape)
-'''
+    size = data.shape[1]
+
+    channels = int(size/(width*height))
+    
+    dataNew = data.reshape((examples,width,height,channels)).astype(dtype)
+    
+    newSet = []
+    newLabels = []
+
+    count = 1
+    case = 0
+    for h in data.shape[0] :
+
+        label = labels[h]
+
+        for i in range(0, height-sampleWidth+1, stride) :
+            for j in range(0, width-sampleWidth+1, stride) :
+                newSet.append(np.amax(np.amax(dataNew[h,i:i+sampleWidth,j:j+sampleWidth,:], axis=0),axis=0).flatten())
+                newLabels.append(label)
+
+    return np.array(newSet,dtype=dtype), np.array(newLabels,dtype=dtype)
